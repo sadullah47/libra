@@ -452,7 +452,7 @@ impl TxEmitter {
 
         let mut faucet_account = self.get_money_source(&req.instances, coins_total).await?;
         // Create seed accounts with which we can create actual accounts concurrently
-        info!("hhhhhhhh seeed aacount = {}", seed_account_num);
+        info!("hhhhhhhh seeed aacount = {}, coin per seed = {}", seed_account_num, coins_per_seed_account);
         let seed_accounts = self
             .get_seed_accounts(&req.instances, seed_account_num)
             .await?;
@@ -481,7 +481,7 @@ impl TxEmitter {
                 let index = i / req.instances.len();
                 let instance = req.instances[index].clone();
                 let num_new_accounts = (num_accounts + num_seed_accounts - 1) / num_seed_accounts;
-                info!("hhhhhhhh new account = {}", num_new_accounts);
+                info!("hhhhhhhh new account = {}, coin per account = {}", num_new_accounts, coins_per_account);
                 let client = instance.json_rpc_client();
                 create_new_accounts(
                     seed_account,
