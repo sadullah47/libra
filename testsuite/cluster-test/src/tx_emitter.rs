@@ -447,8 +447,7 @@ impl TxEmitter {
         let num_accounts = requested_accounts - self.accounts.len(); // Only minting extra accounts
         let num_new_accounts = (num_accounts + num_seed_accounts - 1) / num_seed_accounts;
         let coins_per_account = (SEND_AMOUNT + req.gas_price) * MAX_TXNS;
-        let coins_per_seed_account =
-            num_new_accounts as u64 * MAX_TXNS as u64;
+        let coins_per_seed_account = coins_per_account * num_seed_accounts as u64;
         let coins_total = coins_per_account * num_accounts as u64;
 
         let mut faucet_account = self.get_money_source(&req.instances, coins_total).await?;
