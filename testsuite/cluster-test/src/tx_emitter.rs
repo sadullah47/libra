@@ -439,22 +439,23 @@ impl TxEmitter {
             info!("Not minting accounts");
             return Ok(()); // Early return to skip printing 'Minting ...' logs
         }
-        let seed_account_num = if requested_accounts / req.instances.len() > MAX_CHILD_VASP_NUM {
+        let num_seed_accounts = if requested_accounts / req.instances.len() > MAX_CHILD_VASP_NUM {
             requested_accounts / MAX_CHILD_VASP_NUM
         } else {
             req.instances.len()
         };
         let num_accounts = requested_accounts - self.accounts.len(); // Only minting extra accounts
+        let num_new_accounts = (num_accounts + num_seed_accounts - 1) / num_seed_accounts;
         let coins_per_account = (SEND_AMOUNT + req.gas_price) * MAX_TXNS;
         let coins_per_seed_account =
-            (coins_per_account * num_accounts as u64) / seed_account_num as u64;
+            (coins_per_account * num_accounts as u64) / num_seed_accounts as u64;
         let coins_total = coins_per_account * num_accounts as u64;
 
         let mut faucet_account = self.get_money_source(&req.instances, coins_total).await?;
         // Create seed accounts with which we can create actual accounts concurrently
-        info!("hhhhhhhh seeed aacount = {}, coin per seed = {}", seed_account_num, coins_per_seed_account);
+        info!("hhhhhhhh seeed aacount = {}, coin per seed = {}", num_seed_accounts, coins_per_seed_account);
         let seed_accounts = self
-            .get_seed_accounts(&req.instances, seed_account_num)
+            .get_seed_accounts(&req.instances, num_seed_accounts)
             .await?;
         mint_to_new_accounts(
             &mut faucet_account,
@@ -470,7 +471,6 @@ impl TxEmitter {
         info!("Completed minting seed accounts");
         info!("Minting additional {} accounts", num_accounts);
 
-        let num_seed_accounts = seed_accounts.len();
         let seed_rngs = gen_rng_for_reusable_account(num_seed_accounts);
         // For each seed account, create a future and transfer libra from that seed account to new accounts
         let account_futures = seed_accounts
@@ -480,7 +480,6 @@ impl TxEmitter {
                 // Spawn new threads
                 let index = i / req.instances.len();
                 let instance = req.instances[index].clone();
-                let num_new_accounts = (num_accounts + num_seed_accounts - 1) / num_seed_accounts;
                 info!("hhhhhhhh new account = {}, coin per account = {}", num_new_accounts, coins_per_account);
                 let client = instance.json_rpc_client();
                 create_new_accounts(
